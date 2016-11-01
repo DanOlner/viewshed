@@ -3,6 +3,7 @@ library(Matrix)
 library(dplyr)
 library(pryr)
 library(sp)
+library(tidyr)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #Distance matrix for all houses/all turbines----
@@ -10,7 +11,7 @@ library(sp)
 
 #Doesn't matter about updated tip heights
 tb <- read.csv("C:/Data/WindFarmViewShed/ViewshedPython/Data/turbinesFinal_reducedColumns.csv")
-hs <- read.csv("C:/Data/WindFarmViewShed/ViewshedPython/Data/houses_finalMay2016.csv")
+hs <- read.csv("C:/Data/WindFarmViewShed/ViewshedPython/Data/singleSales/singleSalesHouses_July2016.csv")
 
 #1.6 billion possible cells. Ulp.
 #m <- Matrix(0, nrow = 652473, ncol = 2560, sparse = TRUE)
@@ -52,13 +53,14 @@ sequence <- as.integer(rownames(hs[hs$batch == i,]))
 
 #transpose...
 m <- sapply(sequence, function(x) findDists(x)) %>% t
-rownames(m) <- sequence - 1#to match house ID
+#rownames(m) <- sequence - 1#to match house ID
+rownames(m) <- (sequence - 1 + 1000000)#to match house ID, single Sales, starting at 1000000
 colnames(m) <- tb$index
 
 print(paste0("Rows: ", min(sequence)," to ",max(sequence)))
 print(object_size(m))
 
-write.csv(m,paste0("data/distanceMatrix",i,".csv"))
+write.csv(m,paste0("data/distanceMatrix/distanceMatrix",i,".csv"))
 
 }
 
@@ -147,4 +149,20 @@ write.csv(m,"C:/Users/SMI2/Dropbox/WindFarmsII/data/allSalesData/distanceMatrix_
 #   print(object_size(m))
 #   
 # }
+
+#Check matrix results
+chk <- read.csv("C:/Data/WindFarmViewShed/ViewShed_R/data/distanceMatrix/distanceMatrix5.csv")
+
+#Let's keep only non-zero cells
+chk2 <- chk %>% gather(turbine,distance,X0:X2559) 
+
+chk2 <- chk2 %>% filter(distance != 0)
+
+#turbine 82
+check82 <- chk2 %>% filter(turbine=='X82')
+
+check82 %>% filter(X == 1307037)
+
+
+
 

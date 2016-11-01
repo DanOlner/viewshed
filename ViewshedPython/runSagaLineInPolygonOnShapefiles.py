@@ -25,7 +25,7 @@ def run_script(iface):
 	matches = []
 
 	#Get folder names with shapefiles in
-	for root, dirnames, filenames in os.walk('linesOfSightShapefiles'):
+	for root, dirnames, filenames in os.walk('linesOfSightShapefiles/singleSales'):
 		for filename in fnmatch.filter(filenames, '*.shp'):
 			matches.append(filename)
 
@@ -56,13 +56,13 @@ def run_script(iface):
 
 		#Get pre-formed line shapefile from R
 		linez = QgsVectorLayer(
-			('C:/Data/temp/QGIS/linesOfSightShapefiles/' + match),
+			('C:/Data/temp/QGIS/linesOfSightShapefiles/singleSales/' + match),
 			'mastermapGrid','ogr')
 		print(linez.isValid())
 
 		#See if lines cross any areas where there could be building height data
-		processing.runalg('saga:linepolygonintersection', linez, mastermapGrid, 1, ("C:/Data/temp/QGIS/linesOfSightIntersects_mastermap/" + match.split(".")[0] + ".csv"))
-		processing.runalg('saga:linepolygonintersection', linez, CEDA_convexHulls, 1, ("C:/Data/temp/QGIS/linesOfSightIntersects_CEDA/" + match.split(".")[0] + ".csv"))
+		processing.runalg('saga:linepolygonintersection', linez, mastermapGrid, 1, ("C:/Data/temp/QGIS/linesOfSightIntersects_mastermap/singleSales/" + match.split(".")[0] + ".csv"))
+		processing.runalg('saga:linepolygonintersection', linez, CEDA_convexHulls, 1, ("C:/Data/temp/QGIS/linesOfSightIntersects_CEDA/singleSales/" + match.split(".")[0] + ".csv"))
 
 		print(('saved : ' + match + ", ") + str(time.time() - before) + " seconds. " + str((time.time() - start)/60) + " mins total.")
 

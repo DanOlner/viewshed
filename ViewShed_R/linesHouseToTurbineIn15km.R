@@ -10,7 +10,8 @@ geolibs <- c("ggmap","rgdal","rgeos","maptools","dplyr","tidyr","tmap","raster")
 lapply(geolibs, library, character.only = TRUE)
 
 tb <- read.csv("C:/Data/WindFarmViewShed/ViewshedPython/Data/turbinesFinal_reducedColumns.csv")
-hs <- read.csv("C:/Data/WindFarmViewShed/ViewshedPython/Data/houses_finalMay2016.csv")
+#hs <- read.csv("C:/Data/WindFarmViewShed/ViewshedPython/Data/houses_finalMay2016.csv")
+hs <- read.csv("C:/Data/WindFarmViewShed/ViewshedPython/Data/singleSales/singleSalesHouses_July2016.csv")
 
 coordinates(tb) <- ~Feature.Easting+Feature.Northing
 coordinates(hs) <- ~eastingsFinal+northingsFinal
@@ -57,7 +58,7 @@ start = proc.time()
 #Label with house ID
 #for(j in 1:3) {
 #for(j in sample(1:nrow(tb),8)) {
-for(j in 2449:nrow(buff)) {
+for(j in 1:nrow(buff)) {
 # for(j in as.numeric(row.names(tb[tb@data$nameMinusTurbine=='Cathekin Braes',]))) {
 
   bfhouses <- hs[buff[j,],]
@@ -89,7 +90,7 @@ for(j in 2449:nrow(buff)) {
   ldf <- SpatialLines(l2)
   ldf2 <- SpatialLinesDataFrame(ldf, data = data.frame(row.names(ldf)), match.ID = F)
   
-  writeLinesShape(ldf2,paste0("C:/Data/temp/QGIS/linesOfSightShapefiles/linesbfhouses_",j,".shp"))
+  writeLinesShape(ldf2,paste0("C:/Data/temp/QGIS/linesOfSightShapefiles/singleSales/linesbfhouses_",j,".shp"))
   
   print(paste0("Turbine ",j," done. ",round((proc.time() - thistime)[[3]],digits=2)," secs. ",
                round(((proc.time() - start)[[3]]/60),digits=2)," mins since start."))
@@ -104,8 +105,8 @@ for(j in 2449:nrow(buff)) {
 #And so could potentially have had line of sight blocked by a building?
 
 #Get each list of files for mastermap/CEDA
-mm_filez <- list.files("C:/Data/temp/QGIS/linesOfSightIntersects_mastermap",pattern = "*.csv$",full.names = T)
-ceda_filez <- list.files("C:/Data/temp/QGIS/linesOfSightIntersects_CEDA",pattern = "*.csv$",full.names = T)
+mm_filez <- list.files("C:/Data/temp/QGIS/linesOfSightIntersects_mastermap/singleSales",pattern = "*.csv$",full.names = T)
+ceda_filez <- list.files("C:/Data/temp/QGIS/linesOfSightIntersects_CEDA/singleSales",pattern = "*.csv$",full.names = T)
 
 #Why diff number? More CEDA files? If empty intersects were still writing, why aren't there 2560?
 #There are in fact 2560 line shapefiles. I don't like this!
@@ -118,7 +119,7 @@ ceda_filez <- list.files("C:/Data/temp/QGIS/linesOfSightIntersects_CEDA",pattern
 
 #Get the housing data too: reduce as well, but use for also marking which properties 
 #are within 15km of at least one turbine
-hs <- read.csv("C:/Data/WindFarmViewShed/ViewShedJava/SimpleViewShed/data/output/allHouses_CEDArun.csv")
+hs <- read.csv("C:/Data/WindFarmViewShed/ViewShedJava/SimpleViewShed/data/output/singleSales.csv")
 
 hs <- hs %>% dplyr::select(id:distanceToNearest)
 #distanceToNearest is -1 if no turbine was within 15km
@@ -168,6 +169,7 @@ for (file in ceda_filez){
 
 table(hs$crossesMM)#yup, working, it appears...
 table(hs$crossesCEDA)#yup, working, it appears...
+table(hs$crosses_BH)#yup, working, it appears...
 table(hs$crossesMM[hs$distanceToNearest!=-1])#yup, working, it appears...
 table(hs$crossesCEDA[hs$distanceToNearest!=-1])#yup, working, it appears...
 
@@ -175,7 +177,7 @@ table(hs$crossesCEDA[hs$distanceToNearest!=-1])#yup, working, it appears...
 hs$crosses_BH <- bitwOr(hs$crossesMM,hs$crossesCEDA)
 
 #Save!
-write.csv(hs,"C:/Data/WindFarmViewShed/ViewshedPython/Data/doHousesCross_BuildingHeightData.csv",row.names = F)
+write.csv(hs,"C:/Users/SMI2/Dropbox/WindFarmsII/data/allSalesData/singleSales/doSingleSalesHousesCross_BuildingHeightData.csv",row.names = F)
 
 
 

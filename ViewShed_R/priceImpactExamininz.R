@@ -163,6 +163,19 @@ diff1[2,1] - diff1[1,1]
 
 #I wanna know some of the spread of % changes. Bit of bootsrapping mefinks.
 
+#Updating: get latest housing data... oh, same one apparently
+#set to laptop dropbox ref currently...
+hseprices <- read.csv("C:/Users/SMI2/Dropbox/WindFarmsII/data/original/repeatSales_22_5_16.csv")
+
+hseprices$date = as.Date(hseprices$date)
+hseprices$yearmon <- as.yearmon(hseprices$date)
+hseprices$quarters <- as.yearqtr(hseprices$date)
+hseprices$years <- cut(hseprices$date, breaks='year')
+
+results <- read.csv("C:/Users/SMI2/Dropbox/WindFarmsII/data/original/allHouses_CEDArun.csv")
+results_bh <- read.csv("C:/Users/SMI2/Dropbox/WindFarmsII/data/original/allHouses_buildingHeights_CEDArun.csv")
+
+
 #What are the differences in price (for different time periods) 
 #for those in places where at some point a turbine became visible 
 #and ones where it never did?
@@ -177,19 +190,106 @@ hseprices_df <- merge(hseprices_df,
                           results %>% dplyr::select(Title,canISeeAnyObs,visibleObs),
                           by  = 'Title')
 
+#merge in BH version too
+results_bh <- results_bh %>% rename(canISeeAnyObs_BH = canISeeAnyObs,visibleObs_BH = visibleObs)
+
+hseprices_df <- merge(hseprices_df, 
+                      results_bh %>% dplyr::select(Title,canISeeAnyObs_BH,visibleObs_BH),
+                      by  = 'Title')
+
+#Merge in flag for which are (a) within 15km and (b) do cross building height data
+flagz <- read.csv("C:/Users/SMI2/Dropbox/WindFarmsII/data/original/doHousesCross_BuildingHeightData.csv")
+
+hseprices_df <- merge(hseprices_df,flagz %>% dplyr::select(Title,distanceToNearest,crosses_BH),by = 'Title')
+
+#Flag for 'within 15km'
+hseprices_df$within15km <- 0 + (hseprices_df$distanceToNearest!=-1)
+
+#numbers for those two?
+table(hseprices_df$crosses_BH)
+table(hseprices_df$within15km)
 
 hseprices_df <- hseprices_df[order(as.Date(hseprices_df$years)),]
 
 yrz = unique(hseprices_df$years)
 
 #bootstrap sample from each of can and can't see a turbine
-densities <- data.frame(means = as.numeric(), canSee = as.numeric(), year = as.character())
+densities <- data.frame(means = as.numeric(), canSee = as.numeric(), bh_flag = as.numeric(), year = as.character())
 
-# for(i in 1:length(unique(hseprices_df$years))) {
 #for each year's prices...
 for(i in yrz) {
   
+  #cansees first, for terrain
+  year_n_canIsee <- hseprices_df$priceFinal[hseprices_df$years==i 
+                                            & hseprices_df$canISeeAnyObs == 1
+                                            & hseprices_df$within15km == 1]
+  
+  add <- data.frame(
+    means = sapply(seq(1:25000), function(x) 
+      mean(sample(year_n_canIsee, 1000, replace = T))),
+    canSee = 1,
+    bh_flag =0,
+    year = i)
+  
+  densities <- rbind(densities,add)
+  
+  #then can'ts
+  year_n_canIsee <- hseprices_df$priceFinal[hseprices_df$years==i 
+                                            & hseprices_df$canISeeAnyObs == 0
+                                            & hseprices_df$within15km == 1]
+  
+  add <- data.frame(
+    means = sapply(seq(1:25000), function(x) 
+      mean(sample(year_n_canIsee, 1000, replace = T))),
+    canSee = 0,
+    bh_flag =0,
+    year = i)
+  
+  densities <- rbind(densities,add)
+  
+  #Then repeat both for building height can/can't see
   #cansees first
+  year_n_canIsee <- hseprices_df$priceFinal[hseprices_df$years==i 
+                                            & hseprices_df$canISeeAnyObs_BH == 1
+                                            & hseprices_df$within15km == 1
+                                            & hseprices_df$crosses_BH == 1]
+  
+  add <- data.frame(
+    means = sapply(seq(1:25000), function(x) 
+      mean(sample(year_n_canIsee, 1000, replace = T))),
+    canSee = 1,
+    bh_flag =1,
+    year = i)
+  
+  densities <- rbind(densities,add)
+  
+  #then can'ts
+  year_n_canIsee <- hseprices_df$priceFinal[hseprices_df$years==i 
+                                            & hseprices_df$canISeeAnyObs_BH == 0
+                                            & hseprices_df$within15km == 1
+                                            & hseprices_df$crosses_BH == 1]
+  
+  add <- data.frame(
+    means = sapply(seq(1:25000), function(x) 
+      mean(sample(year_n_canIsee, 1000, replace = T))),
+    canSee = 0,
+    bh_flag =1,
+    year = i)
+  
+  densities <- rbind(densities,add)
+  
+  print(paste0("year ",i))
+  
+}
+
+
+#REPEAT WHOLE THING FOR ALL, NOT JUST <15KM / BH CROSSING SUBSET
+densities2 <- data.frame(means = as.numeric(), canSee = as.numeric(), bh_flag = as.numeric(), year = as.character())
+
+#for each year's prices...
+for(i in yrz) {
+  
+  #cansees first, for terrain
   year_n_canIsee <- hseprices_df$priceFinal[hseprices_df$years==i 
                                             & hseprices_df$canISeeAnyObs == 1]
   
@@ -197,9 +297,10 @@ for(i in yrz) {
     means = sapply(seq(1:25000), function(x) 
       mean(sample(year_n_canIsee, 1000, replace = T))),
     canSee = 1,
+    bh_flag =0,
     year = i)
   
-  densities <- rbind(densities,add)
+  densities2 <- rbind(densities2,add)
   
   #then can'ts
   year_n_canIsee <- hseprices_df$priceFinal[hseprices_df$years==i 
@@ -209,13 +310,48 @@ for(i in yrz) {
     means = sapply(seq(1:25000), function(x) 
       mean(sample(year_n_canIsee, 1000, replace = T))),
     canSee = 0,
+    bh_flag =0,
     year = i)
   
-  densities <- rbind(densities,add)
+  densities2 <- rbind(densities2,add)
+  
+  #Then repeat both for building height can/can't see
+  #cansees first
+  year_n_canIsee <- hseprices_df$priceFinal[hseprices_df$years==i 
+                                            & hseprices_df$canISeeAnyObs_BH == 1]
+  
+  add <- data.frame(
+    means = sapply(seq(1:25000), function(x) 
+      mean(sample(year_n_canIsee, 1000, replace = T))),
+    canSee = 1,
+    bh_flag =1,
+    year = i)
+  
+  densities2 <- rbind(densities2,add)
+  
+  #then can'ts
+  year_n_canIsee <- hseprices_df$priceFinal[hseprices_df$years==i 
+                                            & hseprices_df$canISeeAnyObs_BH == 0]
+  
+  add <- data.frame(
+    means = sapply(seq(1:25000), function(x) 
+      mean(sample(year_n_canIsee, 1000, replace = T))),
+    canSee = 0,
+    bh_flag =1,
+    year = i)
+  
+  densities2 <- rbind(densities2,add)
   
   print(paste0("year ",i))
   
 }
+
+#Save both of those for ease of loading later
+saveRDS(densities,"saves/densities.rds")
+saveRDS(densities2,"saves/densities2.rds")
+#~~~
+densities <- readRDS("saves/densities.rds")
+densities2 <- readRDS("saves/densities2.rds")
 
 #cansee <- sapply(seq(1:10000), function(x) mean(sample(hseprices_df$priceFinal,1000, replace = T)))
 #plot(density(densities))
@@ -236,19 +372,73 @@ ggsave(filename = "saves/densityplots_yearlybootstraps.png", output, dpi=200, wi
 #Can I do confidence intervals for those?
 #http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_%28ggplot2%29/#Helper%20functions
 
-summaryz <- densities %>% group_by(year,canSee) %>% 
+summaryz <- densities %>% group_by(year, canSee, bh_flag) %>% 
   summarise(mean = mean(means), 
             min = quantile(means,c(0.025,0.975))[[1]],
             max = quantile(means,c(0.025,0.975))[[2]])
 
-ggplot(summaryz, aes(x=as.Date(year), y=mean, colour=factor(canSee))) + 
-  geom_errorbar(width = 0.1, colour = "black", aes(ymin=min, ymax=max)) +
+dodge <- position_dodge(width=0.1)
+
+summaryz$bh_flagf <- factor(summaryz$bh_flag, labels = c('terrain','buildings'))
+summaryz$visible <- factor(summaryz$canSee, labels = c('no','yes'))
+
+ggplot(summaryz, aes(x=as.Date(year), y=mean, colour=visible)) + 
+  geom_errorbar(width = 0.1, alpha = 0.5, aes(ymin=min, ymax=max), position = dodge) +
   geom_line() +
   geom_point() +
+  facet_wrap(~bh_flagf) +
+  # facet_wrap(~factor(bh_flag, labels = c('terrain','buildings'))) +
   scale_y_log10()
 
+#save after widening
+summaryz_terrain <- summaryz %>% filter(bh_flagf=='terrain') 
+
+sumwide <- summaryz_terrain[,c('year','mean','visible')] %>% 
+  spread(visible,mean)
+
+write.csv(sumwide,'data/turbs_visibleInTimePeriod_avs.csv',row.names = F)
+
+#Repeat for both densities, the subset and all sales
+densities$subset <- '<15km / crosses BH'
+densities2$subset <- 'all'
+
+joinz <- rbind(densities,densities2)
+
+summaryz2 <- joinz %>% group_by(year, canSee, bh_flag,subset) %>% 
+  summarise(mean = mean(means), 
+            min = quantile(means,c(0.025,0.975))[[1]],
+            max = quantile(means,c(0.025,0.975))[[2]])
+
+summaryz2$bh_flagf <- factor(summaryz2$bh_flag, labels = c('terrain','buildings'))
+summaryz2$visible <- factor(summaryz2$canSee, labels = c('no','yes'))
+
+ggplot(summaryz2, aes(x=as.Date(year), y=mean, colour=visible)) + 
+  geom_errorbar(width = 0.1, alpha = 0.5, aes(ymin=min, ymax=max), position = dodge) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~bh_flagf+subset) +
+  # facet_wrap(~factor(bh_flag, labels  =fc('terrain','buildings'))) +
+  scale_y_log10()
+
+#Just the one...
+subz <- summaryz2 %>% filter(subset=='all',bh_flagf == 'terrain')
+
+breakz = c(50000,100000,150000)
+#labelz = as.character(breakz) 
 
 
+output <- ggplot(subz, aes(x=as.Date(year), y=mean, colour=visible)) + 
+  geom_errorbar(width = 0.1, alpha = 0.5, aes(ymin=min, ymax=max), position = dodge) +
+  geom_line() +
+  geom_point() +
+  # scale_y_log10(breaks = c(1000,10000,20000),labels=c(.01,.1,1)) +
+  scale_y_log10(breaks = breakz) +
+  ylab("price (log)") + 
+  xlab("year")
+  
+output
+
+ggsave(filename = "saves/pricelog_viznon.png", output, dpi=200, width = 6,height = 4)
 
 
 
