@@ -66,6 +66,11 @@ public class Landscape {
             for (int j = 0; j < image.getHeight(); j++) {
                 //NOTE: DIVIDED BY 5. Scaling down to match rest of data
                 pixels[i][j] = r.getPixel(i, j, (float[]) null)[0]/5;
+                
+//                if(pixels[i][j]!=0){
+//                    System.out.println("pixel! " + pixels[i][j]);
+//                }
+                
             }
         }
 

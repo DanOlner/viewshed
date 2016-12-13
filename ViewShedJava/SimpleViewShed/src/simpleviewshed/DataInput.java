@@ -32,6 +32,7 @@ public class DataInput {
      */
     public static DataStore loadData(String filename, String pointType, int idFieldIndex, int xFieldIndex, int yFieldIndex, int heightIndex) throws Exception {
 
+        System.out.println("Loading: " + filename);
 //        ArrayList<Point> points = new ArrayList<Point>();
         DataStore data = new DataStore();
 

@@ -8,9 +8,11 @@ library(stringr)
 filenames <- list.files(path = "C:/Data/WindFarmViewShed/ViewShedJava/SimpleViewShed/data/lineofsight/",
                         pattern = "*.csv", 
                         recursive = T,full.names=T)
-#filenames2 <- Sys.glob("C:/Data/WindFarmViewShed/ViewShedJava/SimpleViewShed/data/lineofsight/noBuildingHeights/*.csv")
 
-#filenames <- rbind(filenames,filenames2)
+#Just building heights
+filenames <- list.files(path = "C:/Data/WindFarmViewShed/ViewShedJava/SimpleViewShed/data/lineofsight/withBuildingHeights/",
+                        pattern = "*.csv", 
+                        recursive = F,full.names=T)
 
 count = 0
 
@@ -18,7 +20,7 @@ count = 0
 
 #for (f in filenames) {
 #test on one
-for (f in filenames[1]) {
+for (f in filenames) {
 
   ht <- read.csv(f)
   ht$index <- row.names(ht)
@@ -30,8 +32,6 @@ for (f in filenames[1]) {
   ht <- ht[,2:ncol(ht)]
   
   hasBuildingHeights <- ifelse(length(names(ht))==5, T, F)
-  
-  
   
   #count = count + 1
   
@@ -92,8 +92,7 @@ for (f in filenames[1]) {
 
 
 #Use actual distance in x lab and generally tidy for publication
-
-for (f in filenames[60]) {
+for (f in filenames) {
   
   ht <- read.csv(f)
   ht$index <- row.names(ht)
@@ -116,6 +115,9 @@ for (f in filenames[60]) {
   # htm <- melt(ht, measure.vars=c('DEM','lineofsight'))
   #change names before melt
   names(ht) <- c('dist','canISeeYou','DEM with buildings', 'DEM no buildings', 'line of sight', 'index')
+  
+  #hack to check
+  #ht$`DEM with buildings` <- ht$`DEM with buildings`/5
   
   htm <- melt(ht, id.vars=c('canISeeYou','index', 'dist'))
   # htm <- melt(ht[,c(2:4)])
@@ -168,9 +170,14 @@ for (f in filenames[60]) {
   aunit <- rng/thisheight#the height
   widthwillbe <- distance/aunit/scale
   
+  # ggsave(fullname,
+  #        output,
+  #        dpi=200, width=widthwillbe,height=thisheight, limitsize = F)
+  # 
+  #messing for tree data
   ggsave(fullname,
          output,
-         dpi=200, width=widthwillbe,height=thisheight, limitsize = F)
+         dpi=200, width=8,height=5, limitsize = F)
   
   
 }

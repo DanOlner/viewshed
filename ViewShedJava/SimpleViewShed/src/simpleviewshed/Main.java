@@ -49,7 +49,8 @@ public class Main {
     int observerX, observerY, targetX, targetY;
     float observerHeight;
     //will need to be scaled down by five but leave here for distance band calcs
-    static float radius = 15000;
+//    static float radius = 15000;
+    static float radius = 1000;
 
     boolean canISeeYou = false;
 
@@ -73,11 +74,11 @@ public class Main {
     boolean useSerialisedIfAvailable = false;
     boolean useSampleHousingData = false;
     //Set to batch number point to serialise results. Minus one to turn off.
-    int serialiseResultsAsWeGo = 30;
-    
+    int serialiseResultsAsWeGo = -1;
+
     //Index adjust for the target file.
     //E.g. single sales start at id = 1000000 at the zeroth row index
-    int indexAdjust = 1000000;
+    int indexAdjust = 0;
 
     //Root folder (relative to java viewshed folder) for getting/setting data
     //Use different folder for e.g. centroids analysis vs points analysis
@@ -107,13 +108,12 @@ public class Main {
             //Which I'm doing, if I remember rightly, so I can add results to ALL housing
             //flag for "building height data"; only used if loading serialised
             //Otherwise it'll just load the raw data twice
-            allHouses = loadHousingData(false);
-
+//            allHouses = loadHousingData(false);
             if (weHaveBuildingHeightData) {
                 allHouses_BH = loadHousingData(true);
-                System.out.println("loaded all housing data twice. Total size: " + allHouses.points.size() + "," + allHouses_BH.points.size());
+//                System.out.println("loaded all housing data twice. Total size: " + allHouses.points.size() + "," + allHouses_BH.points.size());
             } else {
-                System.out.println("loaded all housing data once (no building data). Total size: " + allHouses.points.size());            
+                System.out.println("loaded all housing data once (no building data). Total size: " + allHouses.points.size());
             }
 
             //batch number may be set higher if serialised previous work loaded
@@ -124,8 +124,7 @@ public class Main {
 //            for (int fileIndex = testFileSet; fileIndex < testFileSet + 1; fileIndex++) {
 
                 //There'll always be one non-building-height run
-                buildingHeightRun = false;
-
+//                buildingHeightRun = false;
                 System.out.println("Loading fileset " + fileIndex + ", " + ((System.currentTimeMillis() - startTime) / 1000) + " seconds elapsed");
 
                 //memory checks
@@ -138,15 +137,13 @@ public class Main {
                 //Sampling done in viewshed_R/sampleHousingTargetFiles.R
                 loadPointsData(fileIndex, useSampleHousingData);
 
-                interViz(allHouses);
-
+//                interViz(allHouses);
                 //serialise in case we stop running for any reason and can pick up where we left off
-                if (fileIndex % serialiseResultsAsWeGo == 0 && serialiseResultsAsWeGo != -1) {
-                    System.out.println("Saving non-building height...");
-                    fileName = (rootfolder + "/serialised/nonBuilding/" + fileIndex + ".ser");
-                    serialise(allHouses, fileName);
-                }
-
+//                if (fileIndex % serialiseResultsAsWeGo == 0 && serialiseResultsAsWeGo != -1) {
+//                    System.out.println("Saving non-building height...");
+//                    fileName = (rootfolder + "/serialised/nonBuilding/" + fileIndex + ".ser");
+//                    serialise(allHouses, fileName);
+//                }
                 //if available, re-run using building heights
                 if (thisBatchHasBuildingHeights) {
 //                if (false) {
@@ -161,12 +158,11 @@ public class Main {
                     interViz(allHouses_BH);
 
                     //serialise in case we stop running for any reason and can pick up where we left off
-                    if (fileIndex % serialiseResultsAsWeGo == 0 && serialiseResultsAsWeGo != -1) {
-                        System.out.println("Saving building height...");
-                        fileName = (rootfolder + "/serialised/building/" + fileIndex + ".ser");
-                        serialise(allHouses_BH, fileName);
-                    }
-
+//                    if (fileIndex % serialiseResultsAsWeGo == 0 && serialiseResultsAsWeGo != -1) {
+//                        System.out.println("Saving building height...");
+//                        fileName = (rootfolder + "/serialised/building/" + fileIndex + ".ser");
+//                        serialise(allHouses_BH, fileName);
+//                    }
                 }
 
                 batchNumber++;//to get access to loop index in other methods
@@ -174,13 +170,12 @@ public class Main {
             }//end for
 
             //Non-building-height output
-            try {
-                DataOutput.outputData(allHouses, rootfolder + "/output/singleSales.csv");
-//                DataOutput.outputData(allHouses, "data/output/allHouses_CathkinBraes125mTest_BH_edgeWalkTest.csv");
-            } catch (Exception e) {
-                System.out.println("Data output booboo: " + e);
-            }
-
+//            try {
+//                DataOutput.outputData(allHouses, rootfolder + "/output/singleSales.csv");
+////                DataOutput.outputData(allHouses, "data/output/allHouses_CathkinBraes125mTest_BH_edgeWalkTest.csv");
+//            } catch (Exception e) {
+//                System.out.println("Data output booboo: " + e);
+//            }
             //Aaaand building height output
             try {
                 DataOutput.outputData(allHouses_BH, rootfolder + "/output/singleSales_buildingHeights.csv");
@@ -233,7 +228,7 @@ public class Main {
                 }
             }
 
-            System.out.println("houses subset in 15km view: " + targetsInRadius.size());
+            System.out.println("target subset in " + radius + " metre view: " + targetsInRadius.size());
 
             int timer = 0;
 
@@ -285,12 +280,16 @@ public class Main {
 //                }
                 house.allObsDistanceBandCounts[(int) distance2D / 1000]++;
 
+                boolean isThisOneSeen = false;
+
                 //enter index of bresenham line to use
                 if (canISeeYou(0)) {
 
                     house.amISeen = true;
                     //For line-of-sight data output
                     target.amISeen = true;
+                    //Or not. Let's try this one instead
+                    isThisOneSeen = true;
 
                     if (distance2D < house.distanceToNearestVisible) {
                         house.distanceToNearestVisible = distance2D;
@@ -318,26 +317,30 @@ public class Main {
 //                    System.out.println("targetcount: " + targetcount);
 //                    if (targetcount++ < 20) {
 //                if (targetcount++ % 1 == 0) {
-////                if (targetcount++ % 500 == 0) {
-//                    try {
+                if (targetcount++ % 1000 == 0) {
+                    try {
+
+                        String type = (buildingHeightRun ? "withBuildingHeights" : "noBuildingHeights");
+
+                        //DataOutput.outputHeightsAndLineOfSight(target.amISeen, heights, lineOfSight, distance2D,
+                        DataOutput.outputHeightsAndLineOfSight(isThisOneSeen, heights, lineOfSight, distance2D,
+                                ("data/lineofsight/" + type + "/lineOfSight_target" + target.id
+                                + "_obs" + observer.id
+                                + "_batch_" + batchNumber
+                                + ".csv"));
+
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                    }
 //
-//                        String type = (buildingHeightRun ? "withBuildingHeights" : "noBuildingHeights");
-//
-//                        DataOutput.outputHeightsAndLineOfSight(target.amISeen, heights, lineOfSight, distance2D,
-//                                ("data/lineofsight/" + type + "/lineOfSight_target" + target.id
-//                                + "_batch_" + batchNumber
-//                                + ".csv"));
-//
-//                    } catch (Exception e) {
-//                        System.out.println(e.getMessage());
-//                    }
-//
-//                }
+                }
 //                }//if i can see you
             }//for target points
 
             System.out.println("batch " + batchNumber + ", buildingHeightRun " + buildingHeightRun + ", observer " + obcount++ + ": " + observerX + "," + observerY
-                    + ", time: " + ((System.currentTimeMillis() - before) / 60000) + " mins " + ((System.currentTimeMillis() - before) / 1000) + " secs");
+                    + ", time: "
+                    //+ ((System.currentTimeMillis() - before) / 60000) + " mins "
+                    + ((System.currentTimeMillis() - before) / 1000) + " secs");
 
         }//for ob points
 
@@ -527,8 +530,8 @@ public class Main {
         try {
             //last integers: id, column index of eastings/northings and, for observers, tip height column
             //-1: ignore height column, default to 2m
-            targets = (useHousingSample ? DataInput.loadData(rootfolder + "/targets/" + fileNum + "sample.csv", "Target", 0, 2, 3, -1)
-                    : DataInput.loadData(rootfolder + "/targets/" + fileNum + ".csv", "Target", 0, 2, 3, -1));
+            targets = (useHousingSample ? DataInput.loadData(rootfolder + "/targets/" + fileNum + "sample.csv", "Target", 0, 1, 2, -1)
+                    : DataInput.loadData(rootfolder + "/targets/" + fileNum + ".csv", "Target", 0, 1, 2, -1));
 
         } catch (Exception e) {
             System.out.println("Target load fail: " + e.getMessage());
@@ -545,7 +548,7 @@ public class Main {
 
             //last integers: id, column index of eastings/northings and, for observers, tip height column
             //For individual turbines, tip height is in column 7
-            observers = DataInput.loadData(rootfolder + "/observers/" + fileNum + ".csv", "Observer", 0, 2, 3, 7);
+            observers = DataInput.loadData(rootfolder + "/observers/" + fileNum + ".csv", "Observer", 0, 1, 2, 3);
             //for centroid-windfarms, tip height is in column 5
 //            observers = DataInput.loadData(rootfolder + "/observers/" + fileNum + ".csv", "Observer", 0, 2, 3, 5);
 //            observers = DataInput.loadData("data/observers/singleTurbine.csv", "Observer", 2, 3);
@@ -554,12 +557,11 @@ public class Main {
             System.out.println("Observer load fail: " + e.getMessage());
         }
 
-        for (Point p : observers.points) {
-
-            System.out.println("Observer height: " + p.height);
-
-        }
-
+//        for (Point p : observers.points) {
+//
+//            System.out.println("Observer height: " + p.height);
+//
+//        }
         //test with single turbine
         //Nice! http://stackoverflow.com/questions/3099527/how-to-remove-everything-from-an-arraylist-in-java-but-the-first-element
         //Clear out all elements not wanted, leaving the first
@@ -575,7 +577,7 @@ public class Main {
         //Either load from file initially
         //Or reload serialised version if we're part way through a run
         File folder = (buildingHeight ? new File(rootfolder + "/serialised/building") : new File(rootfolder + "/serialised/nonBuilding"));
-        
+
         System.out.println("Load housing data from folder: " + folder.getName());
 
         //http://stackoverflow.com/questions/2102952/listing-files-in-a-directory-matching-a-pattern-in-java
@@ -640,10 +642,10 @@ public class Main {
 //                d = DataInput.loadData("C:\\Data\\WindFarmViewShed\\ViewshedPython\\Data\\postcode_centroids.csv", "Target", 0, 2, 3, -1);
                 //
 //                d = DataInput.loadData("C:\\Data\\WindFarmViewShed\\ViewshedPython\\Data\\houses_finalMay2016.csv", "Target", 0, 2, 3, -1);
-                
                 //Extra single-sales run (index starts at a million, not zero).
-                d = DataInput.loadData("C:\\Data\\WindFarmViewShed\\ViewshedPython\\Data\\singleSales\\singleSalesHouses_July2016.csv", "Target", 0, 2, 3, -1);
-                
+//                d = DataInput.loadData("C:\\Data\\WindFarmViewShed\\ViewshedPython\\Data\\singleSales\\singleSalesHouses_July2016.csv", "Target", 0, 2, 3, -1);
+                //For toronto trees, just use the same target file...?
+                d = DataInput.loadData("C:\\Data\\WindFarmViewShed\\ViewShedJava\\SimpleViewShed\\data\\targets\\1.csv", "Target", 0, 1, 2, -1);
 
 //            d = DataInput.loadData("C:\\Data\\WindFarmViewShed\\ViewshedPython\\Data\\geocodedOldNewRoS.csv", "Target", 0, 2, 3, -1);
 //            d = DataInput.loadData("C:/Data/WindFarmViewShed/ViewshedPython/Data/geocodedOldNewRoS.csv", "Target", 0, 2, 3, -1);

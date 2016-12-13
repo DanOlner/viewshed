@@ -75,6 +75,7 @@ public class BresenhamLine {
 
         while (true) {
 
+            //System.out.println(currentX+","+currentY);
             line.add(Main.raster[currentX][currentY]);
 
             //find same point height on building-height version, if using
@@ -99,6 +100,17 @@ public class BresenhamLine {
             }
         }
 
+//        System.out.println("line lengths: " + line.size() + ", bh: " + bh_line.size());
+//
+//        System.out.println("---");
+        //checking the broken one
+        //Ah: it's building all the way to the edge!
+//        if (line.size() == 5) {
+//            for (int i = 0; i < line.size(); i++) {
+//                System.out.println("vals. " + line.get(i) + " bh: " + bh_line.get(i));
+//            }
+//        }
+//        System.out.println("||||");
         //If using building heights:
         //Adjust BH line using vanilla DEM so target can "see out of" building.
         if (Main.buildingHeightRun) {
@@ -108,7 +120,7 @@ public class BresenhamLine {
                 //Discount first pixel - replace with vanilla
                 bh_line.set(0, line.get(0));
 
-                //If next pixel differ's, we're inside a building.
+                //If next pixel differs, we're inside a building.
                 //Presume this is the building in question and walk to the edge
                 //If the first step is equal, there's level ground in the next pixel
                 //And the while loop will skip, leaving the rest of the bh line unchanged
@@ -117,23 +129,33 @@ public class BresenhamLine {
 
 //                while (bh_line.get(step) != line.get(step)) {
                 //correct float comparison
-                while (!bh_line.get(step).equals(line.get(step))) {
+                //Sometimes (for the tree analysis random points test)
+                //Buildings go over the edge of the Bresenham Line
+                //So you can't walk to the edge
+                //This shouldn't happen with the actual data
+                //But needs checking here with the step size check
+                //Oh and check they're not on the same pixel 
+                //(again, a random test point problem only)
+                if (line.size() > 1) {
+
+                    while (!bh_line.get(step).equals(line.get(step)) && (step + 1 < line.size())) {
 
 //                    System.out.println("walking to edge of building. Step " + step + ", values: "
 //                            + bh_line.get(step) + ","
 //                            + line.get(step)
 //                    );
-                    
 //                    if(!bh_line.get(step).equals(line.get(step))){
 //                        System.out.println("equals method not working");
 //                    } else{
 //                        System.out.println("working!");
 //                    }
+                        bh_line.set(step, line.get(step));
 
-                    bh_line.set(step, line.get(step));
-                    step++;
+                        step++;
 
-                }
+                    }
+
+                }//if line.size>1
 
                 //if we found equal in both on pixel 2 / step 1 just let me know
 //                if (step == 1) {
@@ -141,7 +163,6 @@ public class BresenhamLine {
 //                            + bh_line.get(2) + ","
 //                            + line.get(2));
 //                }
-
             } else {
 
                 //start of line is house/target, end is observer/turbine.
