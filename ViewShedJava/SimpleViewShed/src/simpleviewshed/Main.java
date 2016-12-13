@@ -30,7 +30,7 @@ public class Main {
     //bh_raster is same but with building heights added. Will use both where possible.
     public static float[][] raster, bh_raster;
     //switch for trying to use building heights (turn off for e.g. centroid runs that have none)
-    public static boolean weHaveBuildingHeightData = true;
+    public static boolean weHaveBuildingHeightData = false;
 
     //If building height data is present for this batch...
     public static boolean thisBatchHasBuildingHeights = false;
@@ -73,15 +73,9 @@ public class Main {
     boolean useSerialisedIfAvailable = false;
     boolean useSampleHousingData = false;
     //Set to batch number point to serialise results. Minus one to turn off.
-    int serialiseResultsAsWeGo = 30;
-    
-    //Index adjust for the target file.
-    //E.g. single sales start at id = 1000000 at the zeroth row index
-    int indexAdjust = 1000000;
+    int serialiseResultsAsWeGo = -1;
 
-    //Root folder (relative to java viewshed folder) for getting/setting data
-    //Use different folder for e.g. centroids analysis vs points analysis
-    public static String rootfolder = "data";
+    public static String rootfolder = "data_centroids2";
 
     public Main() {
 
@@ -113,12 +107,12 @@ public class Main {
                 allHouses_BH = loadHousingData(true);
                 System.out.println("loaded all housing data twice. Total size: " + allHouses.points.size() + "," + allHouses_BH.points.size());
             } else {
-                System.out.println("loaded all housing data once (no building data). Total size: " + allHouses.points.size());            
+                System.out.println("loaded all housing data once (no building data). Total size: " + allHouses.points.size());                
             }
 
             //batch number may be set higher if serialised previous work loaded
             for (int fileIndex = batchNumber; fileIndex < list.size() + 1; fileIndex++) {
-//            for (int fileIndex = 1; fileIndex < 2; fileIndex++) {
+//            for (int fileIndex = 7; fileIndex < 8; fileIndex++) {
                 //Cathkin Braes
 //            for (int fileIndex = 47; fileIndex < 48; fileIndex++) {
 //            for (int fileIndex = testFileSet; fileIndex < testFileSet + 1; fileIndex++) {
@@ -175,7 +169,7 @@ public class Main {
 
             //Non-building-height output
             try {
-                DataOutput.outputData(allHouses, rootfolder + "/output/singleSales.csv");
+                DataOutput.outputData(allHouses, rootfolder + "/output/allHouses_CEDArun.csv");
 //                DataOutput.outputData(allHouses, "data/output/allHouses_CathkinBraes125mTest_BH_edgeWalkTest.csv");
             } catch (Exception e) {
                 System.out.println("Data output booboo: " + e);
@@ -183,7 +177,7 @@ public class Main {
 
             //Aaaand building height output
             try {
-                DataOutput.outputData(allHouses_BH, rootfolder + "/output/singleSales_buildingHeights.csv");
+                DataOutput.outputData(allHouses_BH, rootfolder + "/output/allHouses_buildingHeights_CEDArun.csv");
 //                DataOutput.outputData(allHouses_BH, "data/output/allHouses_buildingHeights_CathkinBraes125mTest_BH_edgeWalkTest.csv");
             } catch (Exception e) {
                 System.out.println("Data output booboo: " + e);
@@ -241,7 +235,7 @@ public class Main {
             for (TargetPoint target : targetsInRadius) {
 
                 //Get reference to parent house where we'll add data
-                house = (TargetPoint) d.points.get(target.id - indexAdjust);
+                house = (TargetPoint) d.points.get(target.id);
 
                 //get matching house object where we'll store the data
                 //note the times 5 to take it back up to metres again!
@@ -545,9 +539,9 @@ public class Main {
 
             //last integers: id, column index of eastings/northings and, for observers, tip height column
             //For individual turbines, tip height is in column 7
-            observers = DataInput.loadData(rootfolder + "/observers/" + fileNum + ".csv", "Observer", 0, 2, 3, 7);
+            //observers = DataInput.loadData(rootfolder + "/observers/" + fileNum + ".csv", "Observer", 0, 2, 3, 7);
             //for centroid-windfarms, tip height is in column 5
-//            observers = DataInput.loadData(rootfolder + "/observers/" + fileNum + ".csv", "Observer", 0, 2, 3, 5);
+            observers = DataInput.loadData(rootfolder + "/observers/" + fileNum + ".csv", "Observer", 0, 2, 3, 5);
 //            observers = DataInput.loadData("data/observers/singleTurbine.csv", "Observer", 2, 3);
 
         } catch (Exception e) {
@@ -637,13 +631,9 @@ public class Main {
                 //-1: ignore height column, default to 2m
 
                 //Postcode centroids                
-//                d = DataInput.loadData("C:\\Data\\WindFarmViewShed\\ViewshedPython\\Data\\postcode_centroids.csv", "Target", 0, 2, 3, -1);
+                d = DataInput.loadData("C:\\Data\\WindFarmViewShed\\ViewshedPython\\Data\\postcode_centroids.csv", "Target", 0, 2, 3, -1);
                 //
 //                d = DataInput.loadData("C:\\Data\\WindFarmViewShed\\ViewshedPython\\Data\\houses_finalMay2016.csv", "Target", 0, 2, 3, -1);
-                
-                //Extra single-sales run (index starts at a million, not zero).
-                d = DataInput.loadData("C:\\Data\\WindFarmViewShed\\ViewshedPython\\Data\\singleSales\\singleSalesHouses_July2016.csv", "Target", 0, 2, 3, -1);
-                
 
 //            d = DataInput.loadData("C:\\Data\\WindFarmViewShed\\ViewshedPython\\Data\\geocodedOldNewRoS.csv", "Target", 0, 2, 3, -1);
 //            d = DataInput.loadData("C:/Data/WindFarmViewShed/ViewshedPython/Data/geocodedOldNewRoS.csv", "Target", 0, 2, 3, -1);

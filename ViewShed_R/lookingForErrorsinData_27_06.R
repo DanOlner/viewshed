@@ -1,5 +1,3 @@
-
-
 #Doing checks on data to see why values are being odd.
 library(readstata13)
 library(dplyr)
@@ -14,152 +12,9 @@ library(tidyr)
 library(scales)
 library(data.table)
 library(NCmisc)
-library(class)
 
 geolibs <- c("pryr","stringr","ggmap","rgdal","rgeos","maptools","dplyr","tidyr","tmap","raster")
 lapply(geolibs, library, character.only = TRUE)
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-#FUNCTION
-#Bootstrap sample a vector. Return means and sample size
-#Return list containing the means and a 95% CI summary
-#sampleSizes: vector of sample sizes to get means for 
-#repeats: number of times to get mean from sample of size sampleSize
-#replace: True is default for standard bootstrap but false useful also
-bootstrap_MultiSampleSizes <- function(vectr, sampleSizes, repeats = 5000, repl = T) {
-  
-  meanz <- data.frame(means = as.numeric(), sampleSize = as.numeric())
-  
-  #for range of sample sizes
-  for(i in sampleSizes) {
-    
-    print(i)
-    
-    #sample size i, get that sample 5000 times
-    add <- data.frame(
-      means = sapply(seq(1:repeats), function(x) 
-        mean(sample(vectr, i, replace = repl))),
-      sampleSize = i)
-    
-    meanz <- rbind(meanz,add)
-    
-  }
-  
-  summaryz <- meanz %>% group_by(sampleSize) %>% 
-    summarise(mean = mean(means), 
-              min = quantile(means,c(0.025,0.975))[[1]],
-              max = quantile(means,c(0.025,0.975))[[2]])
-  
-  return(list(meanz,summaryz))
-  
-}
-
-#FUNCTION
-#Bootstrap sample a vector. 
-#Just one bootstrap group this time.
-#Return means and CIs
-#Return list containing the means and a 95% CI summary
-#repeats: number of times to get mean from sample of size sampleSize
-#replace: True is default for standard bootstrap but false useful also
-bootstrap_single <- function(vectr, sampleSize, repeats = 5000, repl = T) {
-  
-  meanz <- data.frame(
-    means = sapply(seq(1:repeats), function(x) 
-      mean(sample(vectr, sampleSize, replace = repl))))
-  
-  summaryz <- meanz %>% 
-    summarise(mean = mean(means), 
-              min = quantile(means,c(0.025,0.975))[[1]],
-              max = quantile(means,c(0.025,0.975))[[2]])
-  
-  return(summaryz)
-  
-}
-
-#FUNCTION
-#return mean of bootstrapped mean differences (and CIs) between two datasets
-#i.e. a before and after group of log prices: 
-#The difference between the two, for a sample from them
-#Then repeated to get many, then get summary stats
-bootstrap_diff <- function(vector1, vector2, sampleSize1, sampleSize2, repeats = 5000, repl = T){
-  
-  #Get two sets of same-size means for  the two
-  meanz1 <- data.frame(
-    means = sapply(seq(1:repeats), function(x) 
-      mean(sample(vector1, sampleSize1, replace = repl))))
-  
-  meanz2 <- data.frame(
-    means = sapply(seq(1:repeats), function(x) 
-      mean(sample(vector2, sampleSize2, replace = repl))))
-  
-  diff = meanz2 - meanz1
-  
-  summaryz <- diff %>% 
-    summarise(mean = mean(means), 
-              min = quantile(means,c(0.025,0.975))[[1]],
-              max = quantile(means,c(0.025,0.975))[[2]])
-  
-  return(summaryz)
-  
-}
-
-#test <- bootstrap_diff(runif(1000),runif(1000),50,50)
-
-bootstrap_diff_propertySample <- function(properties_w_sales, propertySampleSize, repeats = 5000, repl = T){
-  
-  uniqueTitles <- unique(properties_w_sales$Title)
-  
-  meanz <- data.frame(means = seq(1:repeats))
-  
-  #Repeat for number of bootstrap repeats
-  #This is gonna be slower than the others...
-  for(i in seq(1:repeats)){
-    
-    #Get a set of random properties
-    #subset, same number of properties as treatment sample
-    subsetOfProperties <- 
-      properties_w_sales[properties_w_sales$Title %in% 
-                           uniqueTitles[sample(length(uniqueTitles),propertySampleSize, replace = repl)],]
-    
-    paste0(i, ": sales before = ", 
-           subsetOfProperties$priceFinal[subsetOfProperties$preOp == 1] %>% length,
-           ", sales after = ",
-           subsetOfProperties$priceFinal[subsetOfProperties$preOp == 0] %>% length
-           ) %>% 
-      print
-    
-    
-    #Get mean for sales before...
-    mean_b4 <- mean(subsetOfProperties$priceFinal[subsetOfProperties$preOp == 1])
-    
-    #And after
-    mean_after <- mean(subsetOfProperties$priceFinal[subsetOfProperties$preOp == 0])
-    
-    #diff = data.frame(means = (mean_after - mean_b4))
-    meanz$means[i] = mean_after - mean_b4
-    
-    #meanz = rbind(meanz,diff)
-  
-  }
-  
-  summaryz <- meanz %>% 
-    summarise(mean = mean(means), 
-              min = quantile(means,c(0.025,0.975))[[1]],
-              max = quantile(means,c(0.025,0.975))[[2]])
-  
-  return(summaryz)
-  
-}
-
-# test <- bootstrap_diff_propertySample(allSalezInTimeBand,500,repeats=50)
-# test
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 
 #Get the fully processed data
 hse_final <- readRDS("C:/Data/Housing/JessieExtDrive/Misc_RoS_R_Saves/old_new_repeatSalesFinal_bulkSales_minmaxDiffMoreThan9_Removed.rds")
@@ -763,8 +618,8 @@ returnModalDate <- function(turbs){
 #Return list containing the means and a 95% CI summary
 #sampleSizes: vector of sample sizes to get means for 
 #repeats: number of times to get mean from sample of size sampleSize
-#replace: True is default for standard bootstrap but false useful also
-bootstrap_MultiSampleSizes <- function(vectr, sampleSizes, repeats = 5000, repl = T) {
+#replace: false is default for standard bootstrap but true useful also
+bootstrap <- function(vectr, sampleSizes, repeats = 5000, repl = F) {
   
 meanz <- data.frame(means = as.numeric(), sampleSize = as.numeric())
 
@@ -1158,15 +1013,15 @@ sum(countProps$count)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #Do for all dates first (easier working on single property list)
-#distanceBANDSCounts <- hs_turbDistBANDS[,c(turbcols2)] %>% lapply(function(x) table(x!="")[[2]]) %>% unlist
-#turbcols2 text picks up the modal date fields too (not a helpful behaviour I think!)
-distanceBANDSCounts <- hs_turbDistBANDS[,c(2:16)] %>% lapply(function(x) table(x!="")[[2]]) %>% unlist
+distanceBANDSCounts <- hs_turbDistBANDS[,c(turbcols2)] %>% lapply(function(x) table(x!="")[[2]]) %>% unlist
 
 plot(distanceBANDSCounts)
+
 
 #For distance bands, what's the growth in the number of their bands that have at least one turbine in?
 #Actually, that's rather more faff than I can do with right now.
 #distanceBANDSCounts_by_quarter <- 
+
 
 #Then: how many per distance BANDS per year...?
 #For that: merge modal turb dates into the sales
@@ -2211,157 +2066,6 @@ output <- ggplot(meanDiff_canseez2, aes(x = distanceBANDS, y = mean, colour = fa
   facet_wrap(~period)
 
 output
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#What turbines/windfarms in which distance bands?
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-#Turbine numbers might be in same windfarm - will need lookup, probably
-#But let's just check basics.
-storez <- table(hs_turbDistBANDS$tbs_0to1km) %>% data.frame %>% 
-  arrange(-Freq)
-
-#sum(storez$Freq[2:nrow(storez)])
-storez4 <- table(hs_turbDistBANDS$tbs_4to5km) %>% data.frame %>% 
-  arrange(-Freq)
-
-#OK, that's all very interesting. Might well be specific tiny windfarms
-#On hospitals, other amenities, in industrial estates.
-
-#Let's pick some out to compare prices. Again compare to same-sample-size mean changes.
-
-#Hallhill healthy living centre: properties within 0-1.
-#1569/1570
-# properties_near_turbs <- hs_turbDistBANDS %>% dplyr::select(Title,tbs_0to1km,modalDate_tbs_0to1km) %>% 
-#   filter(grepl('1569|1570',tbs_0to1km))
-
-#OK, that's all working for one. Now to test some more...
-#Let's generalise.
-#Run that whole thing for the top list of properties within 0-1km of turbines or small turbine groups
-#That we found in storez above
-#The top 13 sites give us a property count above 75...
-storez[2:14,]
-
-resultz2 = data.frame(turbines = as.character(), treatmentMean = as.numeric(), controlMean = as.numeric(),
-                     controlMinCI = as.numeric(), controlMaxCI = as.numeric())
-
-#And the names of the turbines that can be dropped straight into a regex
-for(i in seq(from = 2, to = 12)){
-
-  #storez$var1 has the turbine names in...
-#   properties_near_turbs <- hs_turbDistBANDS %>% dplyr::select(Title,tbs_0to1km,modalDate_tbs_0to1km) %>% 
-#     filter(grepl(storez$Var1[i],tbs_0to1km))
-  properties_near_turbs <- hs_turbDistBANDS %>% dplyr::select(Title,tbs_4to5km,modalDate_tbs_4to5km) %>% 
-    filter(grepl(storez4$Var1[i],tbs_4to5km))
-  
-  #Which should all have the same modal date? Yup, first quarter 2005.
-#  table(properties_near_turbs$modalDate_tbs_0to1km)
-  table(properties_near_turbs$modalDate_tbs_4to5km)
-  
-  #So only work with single turbines or sites that DO have the same date
-  #So we can use it as the before/after marker
-  #opDate <- as.Date(as.yearqtr(properties_near_turbs$modalDate_tbs_0to1km[1]))
-  opDate <- as.Date(as.yearqtr(properties_near_turbs$modalDate_tbs_4to5km[1]))
-  
-  #paste0("Turbines: ",storez$Var1[i],"  op Date: ", opDate) %>% print
-  paste0("Turbines: ",storez4$Var1[i],"  op Date: ", opDate) %>% print
-  
-  #yearband: number of years before/after.
-  #So e.g. 3 years is a six year band in total.
-  yearband = 6
-  
-  #What I want here:
-  #1. Get ALL sales x years before/after a particular turbine's operational date
-  #2. Flag those within the distance band in question (in hallhill_properties in this case)
-  #3. Flag which sales are before and after 
-  
-  allSalezInTimeBand <- sales_plus_turbBANDS[,c('Title','date','priceFinal','councilArea')] %>% 
-    filter(date > opDate - (365 * yearband) & date < opDate + (365 * yearband))
-  
-  #Flag those for the properties in turbine/group of turbines disance band we want to compare to
-  allSalezInTimeBand$treatment <- 0 + (allSalezInTimeBand$Title %in% properties_near_turbs$Title)
-  
-  #How many sales in the treatment group?
-  table(allSalezInTimeBand$treatment) %>% print
-  
-  #How many properties in the treatment group?
-  treatmentPropertyCount <- unique(allSalezInTimeBand$Title[allSalezInTimeBand$treatment == 1]) %>% length
-  
-  #What council area is treatment group in?
-  #table(allSalezInTimeBand$councilArea[allSalezInTimeBand$treatment == 1])
-  #council <- max(allSalezInTimeBand$councilArea[allSalezInTimeBand$treatment == 1] %>% as.character)
-  
-  #Look at only properties in the same council area...
-  #allSalezInTimeBand <- allSalezInTimeBand[allSalezInTimeBand$councilArea == council,]
-  
-  #Flag 'before operational'
-  #Err preOP!
-  allSalezInTimeBand$preOp <- 0 + (opDate > allSalezInTimeBand$date)
-  
-  #Log prices for comparing change at different scales (natural log approximating % change)
-  allSalezInTimeBand$logPrice <- log(allSalezInTimeBand$priceFinal)
-  
-  #Break these down...
-  #Get treatment pre-op group
-  treatmentPreOp <- allSalezInTimeBand[allSalezInTimeBand$preOp == 1 & allSalezInTimeBand$treatment == 1,]
-  treatmentPostOp <- allSalezInTimeBand[allSalezInTimeBand$preOp == 0 & allSalezInTimeBand$treatment == 1,]
-  
-  #OR! Actually, we need before and after for the same set of properties,
-  #Not just random sales from each time period.
-  #So: a sample of properties, same number of properties in treatment group
-  #(So it'll be a different number of actual sales...)
-  propertyBootstrap <- bootstrap_diff_propertySample(allSalezInTimeBand, treatmentPropertyCount, 500)
-  
-  #Means for the treatment group
-  diffz = mean(treatmentPostOp$priceFinal) - mean(treatmentPreOp$priceFinal)
-  #diffz = mean(treatmentPostOp$logPrice) - mean(treatmentPreOp$logPrice)
-  
-  #propertyBootstrap
-  #diffz
-  newz = data.frame(
-    turbines = storez$Var1[i],
-    treatmentMean = diffz, controlMean = propertyBootstrap[1,1],
-    controlMinCI = propertyBootstrap[1,2], controlMaxCI = propertyBootstrap[1,3]
-  )
-
-  resultz2 = rbind(resultz2,newz)
-
-}#end for i
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#Some spatial autocorrelation testing----
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-#Plan: pick random property, get gBuffer of properties
-#Keep the number of properties
-#Find price diff. Also find price diff for totally spatially random properties of the same number
-#Keep all
-ca <- readOGR(dsn="C:/Data/MapPolygons/Scotland/2010/ScottishCouncilAreas2010_Derivedbyaggregating2011OAs_usingNRSexactfitCensusIndex", 
-              layer="scotland_ca_2010")
-
-properties_geo <- unique(sales_plus_turbBANDS[,c('Title','eastingsFinal','northingsFinal')])
-
-coordinates(properties_geo) <- ~eastingsFinal + northingsFinal
-
-for(i in seq(1:10)) {
-  
-  #buffer round random house
-  buffz <- gBuffer(properties_geo[sample(nrow(properties_geo),1),],width = 3000)
-  
-  #plot(ca)
-  #lines(buffz,col="red")
-  
-  housesInBuffer <- properties_geo[buffz,]
-  
-  
-  
-}
-
-
-
-
 
 
 
