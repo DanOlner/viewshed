@@ -777,6 +777,15 @@ houses <- houses %>% dplyr::select(Title:isRepeatSale,postcode_via_pip,postcode_
 #save again
 write.csv(houses,"C:/Users/SMI2/Dropbox/WindFarmsII/data/allSalesData/SingleSalesPlusRepeatSales_filtered_July16.csv", row.names = F)
 
+windfarms <- read.csv("C:/Users/admin/Dropbox/WindFarmsII/data/allSalesData/wholeWindfarms/whole_windfarm_centroids.csv")
+
+hist(log(windfarms$turbineCount))
+
+
+
+
+
+
 
 
 

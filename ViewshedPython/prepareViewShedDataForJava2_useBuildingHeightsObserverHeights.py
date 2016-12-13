@@ -80,7 +80,10 @@ def run_script(iface):
 
 	#Load from CSV
 	#uri = "file:///C:/Data/WindFarmViewShed/ViewshedPython/Data/geocodedOldNewRoS.csv?type=csv&xField=newRoS_eastings&yField=newRoS_northings&spatialIndex=no&subsetIndex=no&watchFile=no&crs=EPSG:27700"
-	uri = "file:///C:/Data/WindFarmViewShed/ViewshedPython/Data/houses_finalMay2016.csv?type=csv&xField=eastingsFinal&yField=northingsFinal&spatialIndex=no&subsetIndex=no&watchFile=no&crs=EPSG:27700"
+
+	#uri = "file:///C:/Data/WindFarmViewShed/ViewshedPython/Data/houses_finalMay2016.csv?type=csv&xField=eastingsFinal&yField=northingsFinal&spatialIndex=no&subsetIndex=no&watchFile=no&crs=EPSG:27700"
+	#single-sale houses to be appended to previous results
+	uri = "file:///C:/Data/WindFarmViewShed/ViewshedPython/Data/singleSales/singleSalesHouses_July2016.csv?type=csv&xField=eastingsFinal&yField=northingsFinal&spatialIndex=no&subsetIndex=no&watchFile=no&crs=EPSG:27700"
 
 	houses = QgsVectorLayer(uri,'housesJavaDataPrep','delimitedtext')
 	print(houses.isValid())
@@ -280,8 +283,8 @@ def run_script(iface):
 		print('id:' + str(buffr.id()))
 
 		#Cheat to look at the one we want...
-		if buffr.id()  < 35:
-			continue
+		#if buffr.id()  < 35:
+		#continue
 
 		#####################
 		# TURBINES FIRST
@@ -425,64 +428,64 @@ def run_script(iface):
 
 		###########
 		# First DEM
-		before = time.time()
+		# before = time.time()
 
-		filenametif1 = ('ViewShedJava/SimpleViewShed/data/rasters/' +
-			str(buffr.id()) + 
-			'.tif')
+		# filenametif1 = ('ViewShedJava/SimpleViewShed/data/rasters/' +
+		# 	str(buffr.id()) + 
+		# 	'.tif')
 
-		#print filenametif
+		# #print filenametif
 
-		#Flag is for "save with building height data where available"
-		writeVirtualRaster(filenametif1, False)
-		print(str('DEM raster ' + str(buffr.id())) + ': ' + str(time.time() - before) + ' seconds to merge')
-
-
-		########
-		#Re-run again for building height version
-		before = time.time()
-
-		filenametif2 = ('ViewShedJava/SimpleViewShed/data/rasters_w_buildingheight/' +
-			str(buffr.id()) + 
-			'.tif')
-
-		#print filenametif
-
-		#Flag is for "save with building height data where available"
-		writeVirtualRaster(filenametif2, True)
-		print(str('DEM-plus-buildings raster ' + str(buffr.id())) + ': ' + str(time.time() - before) + ' seconds to merge')
+		# #Flag is for "save with building height data where available"
+		# writeVirtualRaster(filenametif1, False)
+		# print(str('DEM raster ' + str(buffr.id())) + ': ' + str(time.time() - before) + ' seconds to merge')
 
 
-		#############
-		#reload to get coord metadata, store in own file
-		#Use non-building-height version as we'll also get DEM info while here
+		# ########
+		# #Re-run again for building height version
+		# before = time.time()
+
+		# filenametif2 = ('ViewShedJava/SimpleViewShed/data/rasters_w_buildingheight/' +
+		# 	str(buffr.id()) + 
+		# 	'.tif')
+
+		# #print filenametif
+
+		# #Flag is for "save with building height data where available"
+		# writeVirtualRaster(filenametif2, True)
+		# print(str('DEM-plus-buildings raster ' + str(buffr.id())) + ': ' + str(time.time() - before) + ' seconds to merge')
+
+
+		# #############
+		# #reload to get coord metadata, store in own file
+		# #Use non-building-height version as we'll also get DEM info while here
 		
-		raster = QgsRasterLayer(filenametif1,'getcoords')
-		print raster.isValid()
+		# raster = QgsRasterLayer(filenametif1,'getcoords')
+		# print raster.isValid()
 
-		# index = 0
+		# # index = 0
 
-		# for line in lines:
-		# 	print str(index) + ': ' + line
-		# 	index += 1
-		# print raster.metadata()
+		# # for line in lines:
+		# # 	print str(index) + ': ' + line
+		# # 	index += 1
+		# # print raster.metadata()
 
-		#line 30 for extent coords
-		#bottom-left : top-right
-		lines = raster.metadata().splitlines()
-		#We just need bottom left
-		line = lines[30].split(":")[0]
-		# #strip out <p> tag
-		line  = line.replace('<p>','')
+		# #line 30 for extent coords
+		# #bottom-left : top-right
+		# lines = raster.metadata().splitlines()
+		# #We just need bottom left
+		# line = lines[30].split(":")[0]
+		# # #strip out <p> tag
+		# line  = line.replace('<p>','')
 
-		# print line
+		# # print line
 
-		# write in own file
-		text_file = open(
-			"C:/Data/WindFarmViewShed/ViewShedJava/SimpleViewShed/data/coords/" + str(buffr.id()) + ".txt",
-			"w")
-		text_file.write(line)
-		text_file.close()
+		# # write in own file
+		# text_file = open(
+		# 	"C:/Data/WindFarmViewShed/ViewShedJava/SimpleViewShed/data/coords/" + str(buffr.id()) + ".txt",
+		# 	"w")
+		# text_file.write(line)
+		# text_file.close()
 
 
 	print('total time: ' + str((time.time() - start)/60) + ' minutes')
