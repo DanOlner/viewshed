@@ -54,14 +54,14 @@ plot(hull)
 
 #~~~~
 #Test smaller subset
-xy=locator(4,"p") 
-
-#http://gis.stackexchange.com/questions/206929/r-create-a-boundingbox-convert-to-polygon-class-and-plot
-boundingBox <- Polygon(xy)
-boundingBoxPoly <- SpatialPolygons(list(Polygons(list(boundingBox), ID = "a")))
-proj4string(boundingBoxPoly) <- proj4string(hull)
-
-plot(boundingBoxPoly,add=T)
+# xy=locator(4,"p") 
+# 
+# #http://gis.stackexchange.com/questions/206929/r-create-a-boundingbox-convert-to-polygon-class-and-plot
+# boundingBox <- Polygon(xy)
+# boundingBoxPoly <- SpatialPolygons(list(Polygons(list(boundingBox), ID = "a")))
+# proj4string(boundingBoxPoly) <- proj4string(hull)
+# 
+# plot(boundingBoxPoly,add=T)
 
 #~~~~
 
@@ -72,12 +72,11 @@ targets <- spsample(hull,500000,'random')
 points(targets[sample(1000),],col='red')
 
 #Or for subset test
-
-observers <- observers[boundingBoxPoly,]
-points(observers[sample(50),],col='green')
-
-targets <- targets[boundingBoxPoly,]
-points(observers[sample(50),],col='green')
+# observers <- observers[boundingBoxPoly,]
+# points(observers[sample(50),],col='green')
+# 
+# targets <- targets[boundingBoxPoly,]
+# points(targets[sample(50),],col='green')
 
 #To dataframes
 ob_df <- data.frame(observers)
