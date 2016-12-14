@@ -116,12 +116,7 @@ public class Main {
                 System.out.println("loaded all housing data once (no building data). Total size: " + allHouses.points.size());
             }
 
-            //batch number may be set higher if serialised previous work loaded
             for (int fileIndex = batchNumber; fileIndex < list.size() + 1; fileIndex++) {
-//            for (int fileIndex = 1; fileIndex < 2; fileIndex++) {
-                //Cathkin Braes
-//            for (int fileIndex = 47; fileIndex < 48; fileIndex++) {
-//            for (int fileIndex = testFileSet; fileIndex < testFileSet + 1; fileIndex++) {
 
                 //There'll always be one non-building-height run
 //                buildingHeightRun = false;
@@ -137,13 +132,6 @@ public class Main {
                 //Sampling done in viewshed_R/sampleHousingTargetFiles.R
                 loadPointsData(fileIndex, useSampleHousingData);
 
-//                interViz(allHouses);
-                //serialise in case we stop running for any reason and can pick up where we left off
-//                if (fileIndex % serialiseResultsAsWeGo == 0 && serialiseResultsAsWeGo != -1) {
-//                    System.out.println("Saving non-building height...");
-//                    fileName = (rootfolder + "/serialised/nonBuilding/" + fileIndex + ".ser");
-//                    serialise(allHouses, fileName);
-//                }
                 //if available, re-run using building heights
                 if (thisBatchHasBuildingHeights) {
 //                if (false) {
@@ -157,28 +145,15 @@ public class Main {
 
                     interViz(allHouses_BH);
 
-                    //serialise in case we stop running for any reason and can pick up where we left off
-//                    if (fileIndex % serialiseResultsAsWeGo == 0 && serialiseResultsAsWeGo != -1) {
-//                        System.out.println("Saving building height...");
-//                        fileName = (rootfolder + "/serialised/building/" + fileIndex + ".ser");
-//                        serialise(allHouses_BH, fileName);
-//                    }
                 }
 
                 batchNumber++;//to get access to loop index in other methods
 
             }//end for
 
-            //Non-building-height output
-//            try {
-//                DataOutput.outputData(allHouses, rootfolder + "/output/singleSales.csv");
-////                DataOutput.outputData(allHouses, "data/output/allHouses_CathkinBraes125mTest_BH_edgeWalkTest.csv");
-//            } catch (Exception e) {
-//                System.out.println("Data output booboo: " + e);
-//            }
-            //Aaaand building height output
+        //output results
             try {
-                DataOutput.outputData(allHouses_BH, rootfolder + "/output/singleSales_buildingHeights.csv");
+                DataOutput.outputData(allHouses_BH, rootfolder + "/output/resultFile.csv");
 //                DataOutput.outputData(allHouses_BH, "data/output/allHouses_buildingHeights_CathkinBraes125mTest_BH_edgeWalkTest.csv");
             } catch (Exception e) {
                 System.out.println("Data output booboo: " + e);
@@ -317,7 +292,7 @@ public class Main {
 //                    System.out.println("targetcount: " + targetcount);
 //                    if (targetcount++ < 20) {
 //                if (targetcount++ % 1 == 0) {
-                if (targetcount++ % 1000 == 0) {
+                if (targetcount++ % 100000 == 0) {
                     try {
 
                         String type = (buildingHeightRun ? "withBuildingHeights" : "noBuildingHeights");

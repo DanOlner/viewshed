@@ -52,11 +52,32 @@ hull <- readOGR(dsn = 'C:/Data/WindFarmViewShed/QGIS/TorontoTests',layer = 'hull
 
 plot(hull)
 
-observers <- spsample(hull,10000,'random')
+#~~~~
+#Test smaller subset
+xy=locator(4,"p") 
+
+#http://gis.stackexchange.com/questions/206929/r-create-a-boundingbox-convert-to-polygon-class-and-plot
+boundingBox <- Polygon(xy)
+boundingBoxPoly <- SpatialPolygons(list(Polygons(list(boundingBox), ID = "a")))
+proj4string(boundingBoxPoly) <- proj4string(hull)
+
+plot(boundingBoxPoly,add=T)
+
+#~~~~
+
+observers <- spsample(hull,500000,'random')
 points(observers[sample(1000),])
 
-targets <- spsample(hull,10000,'random')
+targets <- spsample(hull,500000,'random')
 points(targets[sample(1000),],col='red')
+
+#Or for subset test
+
+observers <- observers[boundingBoxPoly,]
+points(observers[sample(50),],col='green')
+
+targets <- targets[boundingBoxPoly,]
+points(observers[sample(50),],col='green')
 
 #To dataframes
 ob_df <- data.frame(observers)
